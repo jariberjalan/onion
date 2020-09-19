@@ -1,0 +1,364 @@
+#!/bin/bash
+#
+# =======================================================================
+# oooooo++/::-`                                                      
+# ysssssooo+/::.                                                        
+# hhhyyysssoo+/:-                                                       
+# -:+shhyyssso+/:-                                                      
+#     -shhyssoo+::.      .+oooo+.  /s-   -s -s` `:ooooo:` `s+`   s:     
+#      `yhhyssoo/:-     :y-    .s/ +ys+` :y -h``s/`   `/s``hoy-  y/     
+#       +hhyssoo/::     s/      :y +s +s.:y -h`:y       y:`h--y/ y/     
+#      `yhhyssoo/:-     :y-    -s/ +s  -ysy -h``s+`   `+s``h- `osy/     
+#     .shhyssoo+::.      ./oooo+.  /o   `+s -s`  :ooooo:  `s.   :s:     
+# -:/shhyyssso+/:-                                                      
+# hhhyyysssoo+/:-                                                       
+# yysssssoo+/::.                                                        
+# oooooo++/::-`                                                         
+# =======================================================================
+#        Onion - Widening tor connection in every distro linux
+#
+# Author : jariberjalan
+# More : https://github.com/jariberjalan/onion
+# Copyright 2020 - jariberjalan
+# =======================================================================
+# 
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#  
+#
+
+# =======================================================================
+#  Informasi Dasar
+# =======================================================================
+program="Onion"
+version="0.1.1"
+config="/usr/share/onion/etc"
+backup="/usr/share/onion/bak"
+
+# =======================================================================
+#  Daftar Layanan Linux
+# =======================================================================
+if [[ -f /usr/bin/service ]]; then 
+	start='service tor start';  stop='service tor stop';  restart='service tor restart';  enable='service tor start';  enable='service tor stop';  ips='service iptables start'; ipe='service iptables enable'; ipr='service iptables restart'; ipst='service iptables stop'; 
+elif [[ -f /usr/bin/systemctl ]]; then
+	start='systemctl start tor'; stop='systemctl stop tor'; restart='systemctl restart tor'; enable='systemctl enable tor'; disable='systemctl enable tor'; ips='systemctl start iptables'; ipe='systemctl enable iptables'; ipr='systemctl restart iptables'; ipst='systemctl stop iptables'; 
+elif [[ -f /usr/bin/chkconfig ]]; then
+	start='chkconfig tor on'; stop='chkconfig tor off'; restart='chkconfig tor off && chkconfig tor on'; enable='chkconfig tor --add'; disable='chkconfig tor --del'; ips='chkconfig iptables on'; ipe='chkconfig iptables --add'; ipr='chkconfig iptables off && chkconfig iptables on'; ipst='chkconfig iptables off'; 
+else
+	echo "Sorry, undefined services"
+	exit 1
+fi
+
+
+# =======================================================================
+#  Aturan Firewall
+# =======================================================================
+P=`stat -c '%U' /var//lib/tor`
+kosong="# Empty iptables rule file\n*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\nCOMMIT\n"
+all='*nat\n:PREROUTING ACCEPT [6:2126]\n:INPUT ACCEPT [0:0]\n:OUTPUT ACCEPT [17:6239]\n:POSTROUTING ACCEPT [6:408]\n\n-A PREROUTING ! -i lo -p udp -m udp --dport 53 -j REDIRECT --to-ports 5353\n-A PREROUTING ! -i lo -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -j REDIRECT --to-ports 9040\n-A OUTPUT -o lo -j RETURN\n-A OUTPUT -d 192.168.0.0/16 -j RETURN\n-A OUTPUT -m owner --uid-owner "'"$P"'" -j RETURN\n-A OUTPUT -p udp -m udp --dport 53 -j REDIRECT --to-ports 5353\n-A OUTPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -j REDIRECT --to-ports 9040\nCOMMIT\n\n*filter\n:INPUT DROP [0:0]\n:FORWARD DROP [0:0]\n:OUTPUT DROP [0:0]\n\n-A INPUT -i lo -j ACCEPT\n-A INPUT -p icmp -j ACCEPT\n-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT\n-A INPUT -p tcp -j REJECT --reject-with tcp-reset\n-A INPUT -p udp -j REJECT --reject-with icmp-port-unreachable\n-A INPUT -j REJECT --reject-with icmp-proto-unreachable\n-A INPUT -j REJECT\n-A OUTPUT -d 127.0.0.0/8 -j ACCEPT\n-A OUTPUT -d 192.168.0.0/16 -j ACCEPT\n-A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT\n-A OUTPUT -m owner --uid-owner "'"$P"'" -j ACCEPT\nCOMMIT\n'
+
+# =======================================================================
+#  Hak Akses Root
+# =======================================================================
+privillage() {
+	if [[ "$(id -u)" -ne 0 ]]; then
+		echo "Please run this program as root"
+		exit 1
+	fi
+}
+
+
+# =======================================================================
+#  Informasi Pertolongan
+# =======================================================================
+help(){
+	echo "Usage: onion [option..]" >&2
+	echo ""
+	echo "Option: "
+	echo "	help | -h         Show this message"
+	echo "	version | -v      Show version"
+	echo "	backup            Install configuration and backup original configuration"
+	echo "	restore           Restore configuration"
+	echo "	status            See current status of onion"
+	echo "	change            Activated or deactivated for onion service"
+	echo ""
+	exit 1
+}
+
+
+# =======================================================================
+#  Backup
+# =======================================================================
+#
+# Backup juga akan melakukan instalasi configurasi
+#
+
+backup(){
+	privillage
+	if [[ ! -f $backup/torrc ]]; then
+		cp /etc/tor/torrc $backup/torrc
+		sudo cp $config/torrc /etc/tor/torrc
+		echo "Backup success"
+	else
+		echo "Backup found"
+	fi
+	exit 1
+}
+
+
+# =======================================================================
+#  Restore
+# =======================================================================
+#
+# Restore akan mengembalikan konfigurasi
+#
+
+restore(){
+	privillage
+	if [[ -f $backup/torrc ]]; then
+		mv $backup/torrc /etc/tor/torrc
+		echo "Restore success"
+	fi
+	exit 1
+}
+
+
+# =======================================================================
+#  Bagian Versi
+# =======================================================================
+version(){
+	echo "$program - Wided tor connection in every distro linux"
+	echo "Version : $version"
+	echo "More : https://github.com/jariberjalan/onion"
+	exit 1
+}
+
+
+# =======================================================================
+#  Status aktif tidaknya koneksi tor
+# =======================================================================
+#
+# Melihat status 
+#
+
+status(){
+	if curl -s -m 10 --socks5 "localhost:9050" --socks5-hostname "localhost:9050" -L "https://check.onionproject.org" | cat | tac | grep -q 'Congratulations';  then
+	        echo "Onion in condition active"
+	else
+	        echo "Onion in condition nonactive"
+	fi
+	exit 1
+}
+
+
+# =======================================================================
+#  Based Arch
+# =======================================================================
+arc(){
+	if [[ ! -f $config/installed ]]; then
+		sysctl -w net.ipv6.conf.all.disable_ipv6=1 &>/dev/null
+		sysctl -w net.ipv6.conf.default.disable_ipv6=1 &>/dev/null
+		echo -e $all > $config/iptables.onion
+		iptables-restore < $config/iptables.onion
+		$(echo $restart)
+		echo "" > $config/installed
+		read -p "Do you want kill the browser (y/N)? " thebi
+		case $thebi in
+			[yY] | [yYeEsS] ) for i in 'firefox chrome chromium google-chrome ungoogled-chromium qt-browser opera vivaldi edge browser';  do
+					kill $(pidof $i) 2>/dev/null
+					echo "Browser has been killed and Onion has been activated!! You become anonymous in cyber world."
+					echo ""
+				done
+				;;
+			* ) echo "Onion activated!! You become anonymous in cyber world.";;
+		esac
+		exit
+	else
+		sysctl -w net.ipv6.conf.all.disable_ipv6=0 &>/dev/null
+		sysctl -w net.ipv6.conf.default.disable_ipv6=0 &>/dev/null
+		$(echo $stop)
+		echo -e $kosong > $config/empty.rules
+		iptables-restore < $config/empty.rules
+		rm -f $config/installed
+		echo "Onion deactivated!! Stay safe.."
+		exit
+	fi
+}
+
+
+# =======================================================================
+#  Based Debian
+# =======================================================================
+debi(){
+	if [[ ! -f $config/installed ]]; then
+		sysctl -w net.ipv6.conf.all.disable_ipv6=1 &>/dev/null
+		sysctl -w net.ipv6.conf.default.disable_ipv6=1 &>/dev/null
+		echo -e $all > $config/iptables.onion
+		iptables-restore < $config/iptables.onion
+		$(echo $restart)
+		echo "" > $config/installed
+		
+		read -p "Do you want kill the browser (y/N)? " thebi
+		case $thebi in
+			[yY] | [yYeEsS] ) for i in 'firefox chrome chromium google-chrome ungoogled-chromium qt-browser opera vivaldi edge browser';  do
+					kill $(pidof $i) 2>/dev/null
+					echo "Browser has been killed and Onion has been activated!! You become anonymous in cyber world."
+					echo ""
+				done
+				;;
+			* ) echo "Onion activated!! You become anonymous in cyber world.";;
+		esac
+		exit
+	else
+		sysctl -w net.ipv6.conf.all.disable_ipv6=0 &>/dev/null
+		sysctl -w net.ipv6.conf.default.disable_ipv6=0 &>/dev/null
+		$(echo $stop)
+		echo -e $kosong > $config/empty.rules
+		iptables-restore < $config/empty.rules
+		rm -f $config/installed
+		echo "Onion deactivated!! Stay safe.."
+		exit
+	fi
+}
+
+
+# =======================================================================
+#  Fedora
+# =======================================================================
+fedo(){
+	if [[ ! -f $config/installed ]]; then
+		sysctl -w net.ipv6.conf.all.disable_ipv6=1 &>/dev/null
+		sysctl -w net.ipv6.conf.default.disable_ipv6=1 &>/dev/null
+		echo -e $all > $config/iptables.onion
+		iptables-restore < $config/iptables.onion
+		$(echo $restart)
+		echo "" > $config/installed
+		
+		read -p "Do you want kill the browser (y/N)? " thebi
+		case $thebi in
+			[yY] | [yYeEsS] ) for i in 'firefox chrome chromium google-chrome ungoogled-chromium qt-browser opera vivaldi edge browser';  do
+					kill $(pidof $i) 2>/dev/null
+					echo "Browser has been killed and Onion has been activated!! You become anonymous in cyber world."
+					echo ""
+				done
+				;;
+			* ) echo "Onion activated!! You become anonymous in cyber world.";;
+		esac
+		exit
+	else
+		sysctl -w net.ipv6.conf.all.disable_ipv6=0 &>/dev/null
+		sysctl -w net.ipv6.conf.default.disable_ipv6=0 &>/dev/null
+		$(echo $stop)
+		echo -e $kosong > $config/empty.rules
+		iptables-restore < $config/empty.rules
+		rm -f $config/installed
+		echo "Onion deactivated!! Stay safe.."
+		exit
+	fi
+}
+
+
+# =======================================================================
+#  OpenSUSE
+# =======================================================================
+zyper(){
+	if [[ ! -f $config/installed ]]; then
+		sysctl -w net.ipv6.conf.all.disable_ipv6=1 &>/dev/null
+		sysctl -w net.ipv6.conf.default.disable_ipv6=1 &>/dev/null
+		echo -e $all > $config/iptables.onion
+		iptables-restore < $config/iptables.onion
+		$(echo $restart)
+		echo "" > $config/installed
+		
+		read -p "Do you want kill the browser (y/N)? " thebi
+		case $thebi in
+			[yY] | [yYeEsS] ) for i in 'firefox chrome chromium google-chrome ungoogled-chromium qt-browser opera vivaldi edge browser';  do
+					kill $(pidof $i) 2>/dev/null
+					echo "Browser has been killed and Onion has been activated!! You become anonymous in cyber world."
+					echo ""
+				done
+				;;
+			* ) echo "Onion activated!! You become anonymous in cyber world.";;
+		esac
+		exit
+	else
+		sysctl -w net.ipv6.conf.all.disable_ipv6=0 &>/dev/null
+		sysctl -w net.ipv6.conf.default.disable_ipv6=0 &>/dev/null
+		$(echo $stop)
+		echo -e $kosong > $config/empty.rules
+		iptables-restore < $config/empty.rules
+		rm -f $config/installed
+		echo "Onion deactivated!! Stay safe.."
+		exit
+	fi
+}
+
+# =======================================================================
+#  Perintah Utama
+# =======================================================================
+active(){
+	privillage
+	if [[ ! -f /usr/bin/tor && ! -f /usr/bin/make ]]; then
+		if [[ -f /usr/bin/pacman ]]; then
+			sudo pacman -S tor make
+			echo "Run again to activated onion"
+			exit
+		elif [[ -f /usr/bin/apt ]]; then
+			sudo apt install tor make
+			echo "Run again to activated onion"
+			exit
+		elif [[ -f /usr/bin/yum ]]; then
+			sudo yum install tor make
+			echo "Run again to activated onion"
+			exit
+		elif [[ -f /usr/bin/zypper ]]; then
+			sudo zypper install tor make
+			echo "Run again to activated onion"
+			exit
+		else
+			echo "Sorry, system undefined."
+			exit
+		fi
+	else
+		if [[ -f $backup/torrc ]]; then
+			if [[ -f /usr/bin/pacman ]]; then
+				arc
+			elif [[ -f /usr/bin/apt ]]; then
+				debi
+			elif [[ -f /usr/bin/yum ]]; then
+				fedo
+			elif [[ -f /usr/bin/zypper ]]; then
+				zyper
+			else
+				echo "Sorry, system undefined."
+				exit
+			fi
+		else
+			echo "Backup first"	
+			exit
+		fi
+	fi
+}
+
+while :; do
+	case $1 in
+		help | -h ) help;;
+		version | -v ) version;;
+		backup ) backup;;
+		restore ) restore;;
+		status ) status;;
+		change ) active;;
+		* ) help;;
+	esac
+done
