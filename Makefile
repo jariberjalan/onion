@@ -17,7 +17,9 @@ install:
 
 uninstall:
 
+	mv $(DATA_DIR)/$(PROGRAM_NAME)/bak/torrc /etc/tor/torrc 
 	rm -Rf $(PROGRAM_DIR)/$(PROGRAM_NAME)
 	rm -Rf $(DATA_DIR)/$(PROGRAM_NAME)
 	rm -Rf $(LICENSE_DIR)/$(PROGRAM_NAME)
 	rm -Rf $(DOCS_DIR)/$(PROGRAM_NAME)
+

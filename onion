@@ -42,7 +42,7 @@
 #  Informasi Dasar
 # =======================================================================
 program="Onion"
-version="0.1.1"
+version="0.2.1"
 config="/usr/share/onion/etc"
 backup="/usr/share/onion/bak"
 
@@ -66,7 +66,7 @@ fi
 # =======================================================================
 P=`stat -c '%U' /var//lib/tor`
 kosong="# Empty iptables rule file\n*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\nCOMMIT\n"
-all='*nat\n:PREROUTING ACCEPT [6:2126]\n:INPUT ACCEPT [0:0]\n:OUTPUT ACCEPT [17:6239]\n:POSTROUTING ACCEPT [6:408]\n\n-A PREROUTING ! -i lo -p udp -m udp --dport 53 -j REDIRECT --to-ports 5353\n-A PREROUTING ! -i lo -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -j REDIRECT --to-ports 9040\n-A OUTPUT -o lo -j RETURN\n-A OUTPUT -d 192.168.0.0/16 -j RETURN\n-A OUTPUT -m owner --uid-owner "'"$P"'" -j RETURN\n-A OUTPUT -p udp -m udp --dport 53 -j REDIRECT --to-ports 5353\n-A OUTPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -j REDIRECT --to-ports 9040\nCOMMIT\n\n*filter\n:INPUT DROP [0:0]\n:FORWARD DROP [0:0]\n:OUTPUT DROP [0:0]\n\n-A INPUT -i lo -j ACCEPT\n-A INPUT -p icmp -j ACCEPT\n-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT\n-A INPUT -p tcp -j REJECT --reject-with tcp-reset\n-A INPUT -p udp -j REJECT --reject-with icmp-port-unreachable\n-A INPUT -j REJECT --reject-with icmp-proto-unreachable\n-A INPUT -j REJECT\n-A OUTPUT -d 127.0.0.0/8 -j ACCEPT\n-A OUTPUT -d 192.168.0.0/16 -j ACCEPT\n-A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT\n-A OUTPUT -m owner --uid-owner "'"$P"'" -j ACCEPT\nCOMMIT\n'
+all='*nat\n:PREROUTING ACCEPT [6:2126]\n:INPUT ACCEPT [0:0]\n:OUTPUT ACCEPT [17:6239]\n:POSTROUTING ACCEPT [6:408]\n\n-A PREROUTING ! -i lo -p udp -m udp --dport 53 -j REDIRECT --to-ports 5353\n-A PREROUTING ! -i lo -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -j REDIRECT --to-ports 9040\n-A OUTPUT -o lo -j RETURN\n-A OUTPUT -d 192.168.0.0/16 -j RETURN\n-A OUTPUT -m owner --uid-owner "'"$P"'" -j RETURN\n-A OUTPUT -p udp -m udp --dport 53 -j REDIRECT --to-ports 5353\n-A OUTPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -j REDIRECT --to-ports 9040\nCOMMIT\n\n*filter\n:INPUT DROP [0:0]\n:FORWARD DROP [0:0]\n:OUTPUT DROP [0:0]\n\n-A INPUT -i lo -j ACCEPT\n-A INPUT -p icmp -j ACCEPT\n-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT\n-A INPUT -p tcp -j REJECT --reject-with tcp-reset\n-A INPUT -p udp -j REJECT --reject-with icmp-port-unreachable\n-A OUTPUT -d 127.0.0.0/8 -j ACCEPT\n-A OUTPUT -d 192.168.0.0/16 -j ACCEPT\n-A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT\n-A OUTPUT -m owner --uid-owner "'"$P"'" -j ACCEPT\nCOMMIT\n'
 
 # =======================================================================
 #  Hak Akses Root
@@ -102,8 +102,6 @@ help(){
 # =======================================================================
 #
 # Backup juga akan melakukan instalasi configurasi
-#
-
 backup(){
 	privillage
 	if [[ ! -f $backup/torrc ]]; then
@@ -122,8 +120,6 @@ backup(){
 # =======================================================================
 #
 # Restore akan mengembalikan konfigurasi
-#
-
 restore(){
 	privillage
 	if [[ -f $backup/torrc ]]; then
@@ -163,6 +159,22 @@ status(){
 
 
 # =======================================================================
+#  Kill Browser
+# =======================================================================
+killbrowser(){
+	read -p "Do you want kill the browser (y/N)? " thebi
+	case $thebi in
+		[yY] | [yYeEsS] ) for i in 'firefox chrome chromium google-chrome ungoogled-chromium qt-browser opera vivaldi edge browser';  do
+				kill $(pidof $i) 2>/dev/null
+				echo "Browser has been killed and Onion has been activated!! You become anonymous in cyber world."
+				echo ""
+			done
+			;;
+		* ) echo "Onion activated!";;
+	esac
+}
+
+# =======================================================================
 #  Based Arch
 # =======================================================================
 arc(){
@@ -173,16 +185,7 @@ arc(){
 		iptables-restore < $config/iptables.onion
 		$(echo $restart)
 		echo "" > $config/installed
-		read -p "Do you want kill the browser (y/N)? " thebi
-		case $thebi in
-			[yY] | [yYeEsS] ) for i in 'firefox chrome chromium google-chrome ungoogled-chromium qt-browser opera vivaldi edge browser';  do
-					kill $(pidof $i) 2>/dev/null
-					echo "Browser has been killed and Onion has been activated!! You become anonymous in cyber world."
-					echo ""
-				done
-				;;
-			* ) echo "Onion activated!! You become anonymous in cyber world.";;
-		esac
+		killbrowser
 		exit
 	else
 		sysctl -w net.ipv6.conf.all.disable_ipv6=0 &>/dev/null
@@ -191,7 +194,7 @@ arc(){
 		echo -e $kosong > $config/empty.rules
 		iptables-restore < $config/empty.rules
 		rm -f $config/installed
-		echo "Onion deactivated!! Stay safe.."
+		echo "Onion deactivated! Stay safe.."
 		exit
 	fi
 }
@@ -209,16 +212,7 @@ debi(){
 		$(echo $restart)
 		echo "" > $config/installed
 		
-		read -p "Do you want kill the browser (y/N)? " thebi
-		case $thebi in
-			[yY] | [yYeEsS] ) for i in 'firefox chrome chromium google-chrome ungoogled-chromium qt-browser opera vivaldi edge browser';  do
-					kill $(pidof $i) 2>/dev/null
-					echo "Browser has been killed and Onion has been activated!! You become anonymous in cyber world."
-					echo ""
-				done
-				;;
-			* ) echo "Onion activated!! You become anonymous in cyber world.";;
-		esac
+		killbrowser
 		exit
 	else
 		sysctl -w net.ipv6.conf.all.disable_ipv6=0 &>/dev/null
@@ -227,14 +221,14 @@ debi(){
 		echo -e $kosong > $config/empty.rules
 		iptables-restore < $config/empty.rules
 		rm -f $config/installed
-		echo "Onion deactivated!! Stay safe.."
+		echo "Onion deactivated! Stay safe.."
 		exit
 	fi
 }
 
 
 # =======================================================================
-#  Fedora
+#  Fedora/CentOS/RHEL
 # =======================================================================
 fedo(){
 	if [[ ! -f $config/installed ]]; then
@@ -245,16 +239,7 @@ fedo(){
 		$(echo $restart)
 		echo "" > $config/installed
 		
-		read -p "Do you want kill the browser (y/N)? " thebi
-		case $thebi in
-			[yY] | [yYeEsS] ) for i in 'firefox chrome chromium google-chrome ungoogled-chromium qt-browser opera vivaldi edge browser';  do
-					kill $(pidof $i) 2>/dev/null
-					echo "Browser has been killed and Onion has been activated!! You become anonymous in cyber world."
-					echo ""
-				done
-				;;
-			* ) echo "Onion activated!! You become anonymous in cyber world.";;
-		esac
+		killbrowser
 		exit
 	else
 		sysctl -w net.ipv6.conf.all.disable_ipv6=0 &>/dev/null
@@ -263,7 +248,7 @@ fedo(){
 		echo -e $kosong > $config/empty.rules
 		iptables-restore < $config/empty.rules
 		rm -f $config/installed
-		echo "Onion deactivated!! Stay safe.."
+		echo "Onion deactivated! Stay safe.."
 		exit
 	fi
 }
@@ -281,16 +266,7 @@ zyper(){
 		$(echo $restart)
 		echo "" > $config/installed
 		
-		read -p "Do you want kill the browser (y/N)? " thebi
-		case $thebi in
-			[yY] | [yYeEsS] ) for i in 'firefox chrome chromium google-chrome ungoogled-chromium qt-browser opera vivaldi edge browser';  do
-					kill $(pidof $i) 2>/dev/null
-					echo "Browser has been killed and Onion has been activated!! You become anonymous in cyber world."
-					echo ""
-				done
-				;;
-			* ) echo "Onion activated!! You become anonymous in cyber world.";;
-		esac
+		killbrowser
 		exit
 	else
 		sysctl -w net.ipv6.conf.all.disable_ipv6=0 &>/dev/null
@@ -299,7 +275,7 @@ zyper(){
 		echo -e $kosong > $config/empty.rules
 		iptables-restore < $config/empty.rules
 		rm -f $config/installed
-		echo "Onion deactivated!! Stay safe.."
+		echo "Onion deactivated! Stay safe.."
 		exit
 	fi
 }
@@ -309,21 +285,45 @@ zyper(){
 # =======================================================================
 active(){
 	privillage
-	if [[ ! -f /usr/bin/tor && ! -f /usr/bin/make ]]; then
+	if [[ ! -f /usr/bin/tor && ! -f /usr/bin/make && ! -f /usr/bin/obfs4proxy ]]; then
 		if [[ -f /usr/bin/pacman ]]; then
-			sudo pacman -S tor make
+			sudo pacman -S tor make obfs4proxy
 			echo "Run again to activated onion"
 			exit
 		elif [[ -f /usr/bin/apt ]]; then
-			sudo apt install tor make
+			sudo apt install tor make obfs4proxy
+			echo "Run again to activated onion"
+			exit
+		elif [[ -f /usr/bin/dnf ]]; then
+			v='[tor]\nname=Tor for Fedora $releasever - $basearch\nbaseurl=https://rpm.torproject.org/fedora/$releasever/$basearch\nenabled=1\ngpgcheck=1\ngpgkey=https://rpm.torproject.org/fedora/public_gpg.key\ncost=100'
+			if [[ ! -f /etc/yum.repos.d/tor.repo ]]; then
+				echo -e "$v" >> /etc/yum.repos.d/tor.repo
+			fi
+			dnf install tor make git golang tor policycoreutils-python-utils
+			export GOPATH=`mktemp -d`
+			go get gitlab.com/yawning/obfs4.git/obfs4proxy
+			cp $GOPATH/bin/obfs4proxy /usr/bin/
+			/sbin/restorecon -v /usr/local/bin/obfs4proxy
 			echo "Run again to activated onion"
 			exit
 		elif [[ -f /usr/bin/yum ]]; then
-			sudo yum install tor make
+			sudo yum install epel-release -y 
+			v='[tor]\nname=Tor for Enterprise Linux $releasever - $basearch\nbaseurl=https://rpm.torproject.org/centos/$releasever/$basearch\nenabled=1\ngpgcheck=1\ngpgkey=https://rpm.torproject.org/centos/public_gpg.key\ncost=100'
+			if [[ ! -f /etc/yum.repos.d/tor.repo ]]; then
+				echo -e "$v" >> /etc/yum.repos.d/tor.repo
+			fi
+			sudo yum install tor make git golang tor policycoreutils-python-utils
+			export GOPATH=`mktemp -d`
+			go get gitlab.com/yawning/obfs4.git/obfs4proxy
+			cp $GOPATH/bin/obfs4proxy /usr/bin/
+			chcon --reference=/usr/bin/tor /usr/bin/obfs4proxy
 			echo "Run again to activated onion"
 			exit
 		elif [[ -f /usr/bin/zypper ]]; then
-			sudo zypper install tor make
+			sudo zypper install tor make go git
+			export GOPATH=`mktemp -d`
+			go get gitlab.com/yawning/obfs4.git/obfs4proxy
+			cp $GOPATH/bin/obfs4proxy /usr/bin/
 			echo "Run again to activated onion"
 			exit
 		else

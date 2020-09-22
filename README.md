@@ -13,7 +13,7 @@ Widening tor connection in every distro linux
 
 ## About
 
-Onion adalah program script transparent proxy melalui Tor Network yang dimaksudkan secara global akan mengakses jaringan tor. Onion hadir karena dapat mendukung hampir semua jenis distro linux.
+Onion adalah script untuk mepermudah menggunakan jaringan tor hampir semua mayoritas distro linux. [More on wiki](https://github.com/jariberjalan/onion/wiki)
 
 ## Screenshot
 
@@ -21,8 +21,6 @@ Onion adalah program script transparent proxy melalui Tor Network yang dimaksudk
 <img src="https://github.com/jariberjalan/onion/blob/master/images/screenshot01.png" alt="Screenshot"/>
 </p>
 
-## How it works?
-Onion menggunakan tor sebagai program utama dan iptables sebagai pelebaran jaringan tor dari IP sampai DNS.
 
 ## Install
 
@@ -34,15 +32,24 @@ Onion menggunakan tor sebagai program utama dan iptables sebagai pelebaran jarin
 
 	`cd onion && sudo make install`
 
+#### Dependency (secara default otomatis terpasang)
+Jika mengalami error ketika instalasi packet obfs4 cobalah untuk melakukan pasang `obfs4proxy` secara manual
+
+- [obfs4](https://community.torproject.org/relay/setup/bridge/fedora/)
+
 ## Remove
 Gunakan perintah dibawah ini pada folder git onion
 
 	sudo make uninstall
 	
 ## How to Use
-Backup terlebih dahulu agar dapat menggunakan onion lalu gunakan perintah dibawah untuk mengaktivasi jaringan tor secara global
+
+	sudo onion backup
+
+saat pertama memasang
 
 	sudo onion change
+
 
 ```
 Usage: onion [option..]
@@ -57,7 +64,6 @@ Option:
 ```
 
 ## Donation
-Jika terbantu dengan script ini dan ingin membantu saya, bisa donasi melalui
 
 - Bitcoin `3QN5gNeuQLiNa4GpcNur7GXmSxpHYUJDJY`
 - Ethereum `0x77a5c6bdfd6997d6077b5a1dff2ba599ecb9f428`
