@@ -149,10 +149,13 @@ version(){
 #
 
 status(){
-	if curl -s -m 10 --socks5 "localhost:9050" --socks5-hostname "localhost:9050" -L "https://check.onionproject.org" | cat | tac | grep -q 'Congratulations';  then
-	        echo "Onion in condition active"
+	local hostport="localhost:9050"
+    local url="https://check.torproject.org/"
+	if curl -s -m 10 --socks5 "$hostport" --socks5-hostname "$hostport" -L "$url" \
+		| cat | tac | grep -q 'Congratulations'; then
+	        printf "Onion is active with IP `curl -s -m 10 ifconfig.me`\n"
 	else
-	        echo "Onion in condition nonactive"
+	        printf "Onion not working"
 	fi
 	exit 1
 }
