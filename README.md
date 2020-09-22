@@ -43,12 +43,9 @@ Gunakan perintah dibawah ini pada folder git onion
 	sudo make uninstall
 	
 ## How to Use
+Backup terlebih dahulu lalu ganti mode
 
-	sudo onion backup
-
-saat pertama memasang
-
-	sudo onion change
+	sudo onion backup && sudo onion change
 
 
 ```
@@ -62,6 +59,11 @@ Option:
 	status            See current status of onion
 	change            Activated or deactivated for onion service
 ```
+
+
+## Lawyer
+Tanggung jawab sepenuhnya ada ditangan pengguna, tindakan apapun untuk menyalahgunaan dan merugikan orang lain adalah illegal, tetap ikuti aturan hukum yang berlaku ditempat Anda. Onion dibuat agar setiap orang dapat menggunakan jaringan anonim secara gratis, aman dan untuk melindungi diri dari adanya aktivitas pelacak yang ada.
+
 
 ## Donation
 
