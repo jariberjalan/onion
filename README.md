@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-Widening tor connection in every distro linux
+Widening tor connection in any linux distro
 </p>
 
 <p align="center">
