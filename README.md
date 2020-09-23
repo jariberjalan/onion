@@ -61,7 +61,7 @@ Option:
 ```
 
 
-## Lawyer
+## The Law
 Tanggung jawab sepenuhnya ada ditangan pengguna, tindakan apapun untuk menyalahgunaan dan merugikan orang lain adalah illegal, tetap ikuti aturan hukum yang berlaku ditempat Anda. Onion dibuat agar setiap orang dapat menggunakan jaringan anonim secara gratis, aman dan untuk melindungi diri dari adanya aktivitas pelacak yang ada.
 
 
